@@ -17,7 +17,7 @@ plugins:
 
 ### smtpd-app.yaml
 
-Add a "fake" transport, with connection destiation 0.0.0.0 (but you can use retry delays and other features)
+Add a "placeholder" transport, with connection destiation 0.0.0.0 (this plugin will leverage retry delays and other queue features)
 
 ```
 transportgroups:
