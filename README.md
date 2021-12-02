@@ -38,6 +38,16 @@ Plugin options are:
 * timeout (number) default no timeout
 * connection_timeout (number) default 300sec
 * headers (array of string) additional headers, default empty array
+* form_data (associative array) form data properties, default is not to use form_data
+  * name (string) name of the form_data field containg the message content
+  * type (string) content-type of the form_data field containg the message content
+  * filename (string) filename of the form_data field containg the message content
+  * encoder (string) encoder of the form_data field containg the message content (see curl_mime_encoder)
+  * fields (associative array) the array key name is the field name
+    * data (string) content of the additional field
+    * type (string) content-type of the additional field
+    * filename (string) filename of the additional field
+    * encoder (string) encoder of the additional field (see curl_mime_encoder)
 
 ```
 Try([
