@@ -38,7 +38,7 @@ ENDIF()
 
 INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/http-deliver.so.link" DESTINATION plugins/autoload/smtpd RENAME http-deliver.so)
 
-INSTALL(FILES "LICENSE" DESTINATION share/doc/http-deliver)
+INSTALL(FILES "LICENSE" DESTINATION share/doc/plugins/http-deliver)
 
 SET(CPACK_PACKAGING_INSTALL_PREFIX "/opt/halon")
 IF (CPACK_GENERATOR MATCHES "DEB")
