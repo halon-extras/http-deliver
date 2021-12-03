@@ -43,6 +43,14 @@ ENDIF()
 
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/http-deliver.so DESTINATION plugins)
 
+IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.14.0") 
+ 	FILE(CREATE_LINK "/opt/halon/plugins/http-deliver.so" "${CMAKE_CURRENT_BINARY_DIR}/http-deliver.so.link" SYMBOLIC)
+ ELSE()
+ 	ADD_CUSTOM_TARGET(link_target ALL COMMAND ${CMAKE_COMMAND} -E create_symlink "/opt/halon/plugins/http-deliver.so" "${CMAKE_CURRENT_BINARY_DIR}/http-deliver.so.link")
+ ENDIF()
+
+ INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/http-deliver.so.link" DESTINATION plugins/autoload/smtpd RENAME http-deliver.so)
+
 INSTALL(FILES "LICENSE" DESTINATION share/doc/plugins/http-deliver)
 
 SET(CPACK_PACKAGING_INSTALL_PREFIX "/opt/halon")
