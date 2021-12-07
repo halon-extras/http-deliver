@@ -5,19 +5,27 @@ The plugin leverages the [queue delivery plugin API](https://docs.halon.io/manua
 Max connection concurrency and rates are configured as usual, using [active queue pickup policies](https://docs.halon.io/manual/queue.html#queue-pickup-policies).
 Messages are `POST`ed to an URL with `Content-Type: message/rfc822`.
 
-## Configuration example
+## Installation
 
-### smtpd.yaml
+Follow the [instructions](https://docs.halon.io/manual/comp_install.html#installation) in our manual to add our package repository and then run the below command.
+
+### Ubuntu
 
 ```
-plugins:
-  - id: http-deliver
-    path: /opt/halon/plugins/http-deliver.so
+apt-get install halon-extras-http-deliver
 ```
+
+### RHEL
+
+```
+yum install halon-extras-http-deliver
+```
+
+## Configuration
 
 ### smtpd-app.yaml
 
-Add a "placeholder" transport, with connection destiation 0.0.0.0 (this plugin will leverage retry delays and other queue features)
+Add a "placeholder" transport, with connection destination 0.0.0.0 (this plugin will leverage retry delays and other queue features)
 
 ```
 transportgroups:
