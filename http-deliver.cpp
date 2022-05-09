@@ -5,6 +5,7 @@
 #include <mutex>
 #include <cstring>
 #include <curl/curl.h>
+#include <openssl/evp.h>
 
 std::thread tid;
 bool quit = false;
@@ -17,6 +18,8 @@ struct halon {
 	struct curl_slist *headers = nullptr;
 	curl_mime *mime = nullptr;
 	void *user;
+	EVP_ENCODE_CTX *evp = nullptr;
+	FILE *fp = nullptr;
 };
 
 void curl_multi()
@@ -68,6 +71,7 @@ void curl_multi()
 				delete (std::string*)h->user;
 				curl_slist_free_all(h->headers);
 				curl_mime_free(h->mime);
+				EVP_ENCODE_CTX_free(h->evp);
 				delete h;
 
 				curl_multi_remove_handle(multi_handle, e);
@@ -117,6 +121,18 @@ size_t read_callback(char *dest, size_t size, size_t nmemb, FILE *fp)
 {
 	size_t x = fread(dest, size, nmemb, fp);
 	return x;
+}
+
+size_t read_callback_evp(char *dest, size_t size, size_t nmemb, halon *h)
+{
+	unsigned char buf[65524 / 2]; // XXX: large safety margin
+	size_t x = fread(buf, 1, sizeof(buf), h->fp);
+	int destlen;
+	if (x == 0)
+		EVP_EncodeFinal(h->evp, (unsigned char*)dest, &destlen);
+	else
+		EVP_EncodeUpdate(h->evp, (unsigned char*)dest, &destlen, buf, (int)x);
+	return destlen;
 }
 
 size_t write_callback(char *data, size_t size, size_t nmemb, std::string *writerData)
@@ -200,6 +216,16 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		}
 		connect_timeout = (long)connect_timeout_;
 	}
+
+	const char *encoder = nullptr;
+	const HalonHSLValue *hv_encoder = HalonMTA_hsl_value_array_find(arguments, "encoder");
+	if (hv_encoder && !HalonMTA_hsl_value_get(hv_encoder, HALONMTA_HSL_TYPE_STRING, &encoder, nullptr))
+	{
+		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad encoder value", 0);
+		HalonMTA_deliver_done(hdc);
+		return;
+	}
+	bool base64_encode = encoder && strcmp(encoder, "base64") == 0;
 
 	auto h = new halon;
 	h->hdc = hdc;
@@ -302,8 +328,19 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	}
 	else
 	{
-		curl_easy_setopt(curl, CURLOPT_READFUNCTION, ::read_callback);
-		curl_easy_setopt(curl, CURLOPT_READDATA, (void*)fp);
+		if (base64_encode)
+		{
+			h->fp = fp;
+			h->evp = EVP_ENCODE_CTX_new();
+			EVP_EncodeInit(h->evp);
+			curl_easy_setopt(curl, CURLOPT_READFUNCTION, ::read_callback_evp);
+			curl_easy_setopt(curl, CURLOPT_READDATA, (void*)h);
+		}
+		else
+		{
+			curl_easy_setopt(curl, CURLOPT_READFUNCTION, ::read_callback);
+			curl_easy_setopt(curl, CURLOPT_READDATA, (void*)fp);
+		}
 		curl_easy_setopt(curl, CURLOPT_POST, 1);
 	}
 

@@ -14,7 +14,7 @@ RUN echo "gpgkey=https://raw.githubusercontent.com/halon/changelog/master/pgp-ke
 RUN echo "enabled=1" >> /etc/yum.repos.d/Halon.repo
 RUN yum install -y halon-5.8.0
 
-RUN yum install -y cmake3 make gcc-c++ rpm-build autoconf
+RUN yum install -y cmake3 make gcc-c++ rpm-build autoconf openssl-devel
 RUN mkdir /tmp/halon
 RUN cd /tmp/halon \
     && curl -O -L https://github.com/curl/curl/releases/download/curl-7_80_0/curl-7.80.0.tar.gz \
