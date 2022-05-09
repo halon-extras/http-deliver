@@ -3,8 +3,8 @@
 #include <thread>
 #include <queue>
 #include <mutex>
+#include <cstring>
 #include <curl/curl.h>
-#include <syslog.h>
 
 std::thread tid;
 bool quit = false;
@@ -271,9 +271,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		curl_mime_data_cb(part, length, (curl_read_callback)fread, (curl_seek_callback)fseek, nullptr, (void*)fp);
 	}
 
-	if (!h->mime)
-		h->headers = curl_slist_append(h->headers, "Content-Type: message/rfc822");
-
+	bool hasContentType = false;
 	const HalonHSLValue *hv_headers = HalonMTA_hsl_value_array_find(arguments, "headers");
 	if (hv_headers)
 	{
@@ -283,10 +281,17 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		{
 			const char *header = nullptr;
 			if (HalonMTA_hsl_value_get(v, HALONMTA_HSL_TYPE_STRING, &header, nullptr))
+			{
+				if (!hasContentType && strncasecmp(header, "Content-Type:", 13) == 0)
+					hasContentType = true;
 				h->headers = curl_slist_append(h->headers, header);
+			}
 			++index;
 		}
 	}
+
+	if (!h->mime && !hasContentType)
+		h->headers = curl_slist_append(h->headers, "Content-Type: message/rfc822");
 
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_PRIVATE, (void*)h);
