@@ -24,8 +24,13 @@ ENV BASH_ENV="/usr/bin/scl_enable" \
     ENV="/usr/bin/scl_enable" \
     PROMPT_COMMAND=". /usr/bin/scl_enable"
 
-RUN yum install -y cmake3 make gcc-c++ rpm-build openssl-devel
+RUN yum install -y cmake3 make gcc-c++ rpm-build
 RUN mkdir /tmp/halon
+RUN cd /tmp/halon \
+    && curl -O -L https://www.openssl.org/source/openssl-1.1.1n.tar.gz \
+    && tar -xzvf openssl-1.1.1n.tar.gz && cd openssl-1.1.1n \
+    && ./config \
+    && make && make install
 RUN cd /tmp/halon \
     && curl -O -L https://github.com/curl/curl/releases/download/curl-7_80_0/curl-7.80.0.tar.gz \
     && tar -zxvf curl-7.80.0.tar.gz && cd curl-7.80.0 \
