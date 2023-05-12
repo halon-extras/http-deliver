@@ -44,7 +44,7 @@ Plugin options are:
 * tls_verify_peer (boolean) default true
 * tls_verify_host (boolean) default true
 * timeout (number) default no timeout
-* connection_timeout (number) default 300sec
+* connect_timeout (number) default 300sec
 * encoder (string) encoder of the POST data (supported: base64)
 * headers (array of string) additional headers, default empty array
 * form_data (associative array) form data properties, default is not to use form_data
