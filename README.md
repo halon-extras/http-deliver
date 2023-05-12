@@ -46,6 +46,8 @@ Plugin options are:
 * timeout (number) default no timeout
 * connect_timeout (number) default 300sec
 * encoder (string) encoder of the POST data (supported: base64)
+* method (string) the request method (default is POST)
+* proxy (string) custom proxy server
 * headers (array of string) additional headers, default empty array
 * form_data (associative array) form data properties, default is not to use form_data
   * name (string) name of the form_data field containg the message content
