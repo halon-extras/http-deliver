@@ -227,6 +227,24 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	}
 	bool base64_encode = encoder && strcmp(encoder, "base64") == 0;
 
+	const char *proxy = nullptr;
+	const HalonHSLValue *hv_proxy = HalonMTA_hsl_value_array_find(arguments, "proxy");
+	if (hv_proxy && !HalonMTA_hsl_value_get(hv_proxy, HALONMTA_HSL_TYPE_STRING, &proxy, nullptr))
+	{
+		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad proxy value", 0);
+		HalonMTA_deliver_done(hdc);
+		return;
+	}
+
+	const char *method = nullptr;
+	const HalonHSLValue *hv_method = HalonMTA_hsl_value_array_find(arguments, "method");
+	if (hv_method && !HalonMTA_hsl_value_get(hv_method, HALONMTA_HSL_TYPE_STRING, &method, nullptr))
+	{
+		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad method value", 0);
+		HalonMTA_deliver_done(hdc);
+		return;
+	}
+
 	auto h = new halon;
 	h->hdc = hdc;
 	h->user = (void*)new std::string;
@@ -357,6 +375,10 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 	if (!tls_verify_peer)
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+	if (proxy)
+		curl_easy_setopt(curl, CURLOPT_PROXY, proxy);
+	if (method)
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method);
 
 	lock.lock();
 	curls.push(curl);
