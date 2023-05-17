@@ -245,6 +245,15 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		return;
 	}
 
+	const char *sourceip = nullptr;
+	const HalonHSLValue *hv_sourceip = HalonMTA_hsl_value_array_find(arguments, "sourceip");
+	if (hv_sourceip && !HalonMTA_hsl_value_get(hv_sourceip, HALONMTA_HSL_TYPE_STRING, &sourceip, nullptr))
+	{
+		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad sourceip value", 0);
+		HalonMTA_deliver_done(hdc);
+		return;
+	}
+
 	auto h = new halon;
 	h->hdc = hdc;
 	h->user = (void*)new std::string;
@@ -379,6 +388,8 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		curl_easy_setopt(curl, CURLOPT_PROXY, proxy);
 	if (method)
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method);
+	if (sourceip)
+		curl_easy_setopt(curl, CURLOPT_INTERFACE, sourceip);
 
 	lock.lock();
 	curls.push(curl);

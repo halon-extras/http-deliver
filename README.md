@@ -49,6 +49,7 @@ Plugin options are:
 * method (string) the request method (default is POST)
 * proxy (string) custom proxy server
 * headers (array of string) additional headers, default empty array
+* sourceip (string) the sourceip (ipv4 or ipv6)
 * form_data (associative array) form data properties, default is not to use form_data
   * name (string) name of the form_data field containg the message content
   * type (string) content-type of the form_data field containg the message content
