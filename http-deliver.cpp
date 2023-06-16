@@ -24,6 +24,7 @@ struct halon {
 
 void curl_multi()
 {
+	pthread_setname_np(pthread_self(), "p/http-deliver");
 	do {
 		CURLMcode mc;
 
