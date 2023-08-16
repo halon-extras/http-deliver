@@ -1,0 +1,20 @@
+
+{
+	"name": "http-deliver",
+	"dockerComposeFile": [
+		"docker-compose.yaml"
+	],
+	"workspaceFolder": "/http-deliver",
+	"service": "halon-smtpd",
+	"overrideCommand": false,
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"Halon.vscode-halon",
+				"Halon.hsl-linter",
+				"Halon.hsl-debug",
+				"ms-vscode.cpptools"
+			]
+		}
+	}
+}

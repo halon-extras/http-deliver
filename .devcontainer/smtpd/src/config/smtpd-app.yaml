@@ -1,0 +1,33 @@
+version: "5.10"
+servers:
+  - id: default
+    phases:
+      eod:
+        hook: default
+    transport: mx
+transportgroups:
+  - id: default
+    retry:
+      count: 30
+      intervals:
+        - interval: 60
+        - interval: 900
+        - interval: 3600
+          notify: true
+        - interval: 7200
+        - interval: 10800
+    dsn:
+      transport: mx
+    transports:
+      - id: mx
+        session:
+          tls:
+            mode: dane
+  - id: http-deliver-group
+    transports:
+      - id: http-deliver
+        connection:
+          server: 0.0.0.0
+resolver:
+  cache:
+    size: 10000

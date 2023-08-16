@@ -1,0 +1,14 @@
+Try([
+    "plugin" => [
+        "id" => "http-deliver",
+        "arguments" => [
+            "url" => "https://10.0.0.1/http-deliver-endpoint/",
+            "tls_verify_peer" => false,
+            "tls_verify_host" => false,
+            "headers" => [
+                "X: A",
+                "Y: B"
+            ]
+        ]
+    ]
+]);

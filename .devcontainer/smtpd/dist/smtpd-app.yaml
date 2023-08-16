@@ -1,0 +1,64 @@
+resolver:
+  cache:
+    size: 10000
+scripting:
+  files: []
+  hooks:
+    eod:
+    - data: |
+        $transactionid = $transaction["id"];
+        $sender = $transaction["senderaddress"];
+        $recipients = $transaction["recipients"];
+        $mail = $arguments["mail"];
+
+        // Queue message for all recipients
+        foreach ($recipients as $recipient)
+            $mail->queue($sender, $recipient["address"], $recipient["transportid"]);
+
+        Accept();
+      id: default
+    predelivery: |-
+      Try([
+          "plugin" => [
+              "id" => "http-deliver",
+              "arguments" => [
+                  "url" => "https://10.0.0.1/http-deliver-endpoint/",
+                  "tls_verify_peer" => false,
+                  "tls_verify_host" => false,
+                  "headers" => [
+                      "X: A",
+                      "Y: B"
+                  ]
+              ]
+          ]
+      ]);
+servers:
+- id: default
+  phases:
+    eod:
+      hook: default
+  transport: mx
+transportgroups:
+- dsn:
+    transport: mx
+  id: default
+  retry:
+    count: 30
+    intervals:
+    - interval: 60
+    - interval: 900
+    - interval: 3600
+      notify: true
+    - interval: 7200
+    - interval: 10800
+  transports:
+  - id: mx
+    session:
+      tls:
+        mode: dane
+- id: http-deliver-group
+  transports:
+  - connection:
+      server: 0.0.0.0
+    id: http-deliver
+version: '5.10'
