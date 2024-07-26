@@ -3,7 +3,7 @@
 This plugin provides HTTP delivery (instead of SMTP/LMTP) to a configurable endpoint.
 The plugin leverages the [queue delivery plugin API](https://docs.halon.io/manual/plugins_native.html#id3).
 Max connection concurrency and rates are configured as usual, using [active queue pickup policies](https://docs.halon.io/manual/queue.html#queue-pickup-policies).
-Messages are `POST`ed to an URL with `Content-Type: message/rfc822`.
+Messages are `POST`ed to an URL with `Content-Type: message/rfc822`. Note that the `Content-Type` header can be changed by setting it manually in the `headers` array.
 
 ## Installation
 
