@@ -83,15 +83,15 @@ Try([
 In the post-delivery script hook there are two ways this plugin may return a result. Keep in mind that http-status-codes classes (200, 400, 500) are mapped to smtp-status-codes in the default behaviour.
 
 ```
-$arguments["attempt"]["error"]["message"] = curl_easy_strerror();
-$arguments["attempt"]["error"]["temporary"] = true;
+$arguments["attempt"]["error"]["message"] // curl_easy_strerror()
+$arguments["attempt"]["error"]["temporary"] // true
 ```
 
 or 
 
 ```
-$arguments["attempt"]["result"]["code"] = http-status-code;
-$arguments["attempt"]["result"]["reason"] = ["HTTP"];
-$arguments["attempt"]["plugin"]["return"]["status"] = http-status-code (number);
-$arguments["attempt"]["plugin"]["return"]["content"] = http-response-body (string);
+$arguments["attempt"]["result"]["code"] // http-status-code
+$arguments["attempt"]["result"]["reason"] // ["HTTP"]
+$arguments["attempt"]["plugin"]["return"]["status"] // http-status-code (number)
+$arguments["attempt"]["plugin"]["return"]["content"] // http-response-body (string)
 ```
