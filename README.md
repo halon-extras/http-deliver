@@ -51,7 +51,7 @@ Plugin options are:
 * headers (array of string) additional headers, default empty array
 * sourceip (string) the sourceip (ipv4 or ipv6)
 * form_data (associative array) form data properties, default is not to use form_data
-  * name (string) name of the form_data field containg the message content
+  * name (string) name of the form_data field containg the message content (if no name is provided the message content will be omitted)
   * type (string) content-type of the form_data field containg the message content
   * filename (string) filename of the form_data field containg the message content
   * encoder (string) encoder of the form_data field containg the message content (see curl_mime_encoder)

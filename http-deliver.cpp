@@ -299,30 +299,32 @@ void Halon_deliver(HalonDeliverContext *hdc)
 			}
 		}
 
-		curl_mimepart *part = curl_mime_addpart(h->mime);
 		const char *data = nullptr;
 		size_t datalen;
 
 		const HalonHSLValue *hv_name = HalonMTA_hsl_value_array_find(hv_form_data, "name");
-		if (HalonMTA_hsl_value_get(hv_name, HALONMTA_HSL_TYPE_STRING, &data, &datalen))
+		if (HalonMTA_hsl_value_get(hv_name, HALONMTA_HSL_TYPE_STRING, &data, &datalen)) {
+			curl_mimepart *part = curl_mime_addpart(h->mime);
+
 			curl_mime_name(part, data);
 
-		const HalonHSLValue *hv_type = HalonMTA_hsl_value_array_find(hv_form_data, "type");
-		if (HalonMTA_hsl_value_get(hv_type, HALONMTA_HSL_TYPE_STRING, &data, &datalen))
-			curl_mime_type(part, data);
+			const HalonHSLValue *hv_type = HalonMTA_hsl_value_array_find(hv_form_data, "type");
+			if (HalonMTA_hsl_value_get(hv_type, HALONMTA_HSL_TYPE_STRING, &data, &datalen))
+				curl_mime_type(part, data);
 
-		const HalonHSLValue *hv_filename = HalonMTA_hsl_value_array_find(hv_form_data, "filename");
-		if (HalonMTA_hsl_value_get(hv_filename, HALONMTA_HSL_TYPE_STRING, &data, &datalen))
-			curl_mime_filename(part, data);
+			const HalonHSLValue *hv_filename = HalonMTA_hsl_value_array_find(hv_form_data, "filename");
+			if (HalonMTA_hsl_value_get(hv_filename, HALONMTA_HSL_TYPE_STRING, &data, &datalen))
+				curl_mime_filename(part, data);
 
-		const HalonHSLValue *hv_encoder = HalonMTA_hsl_value_array_find(hv_form_data, "encoder");
-		if (HalonMTA_hsl_value_get(hv_encoder, HALONMTA_HSL_TYPE_STRING, &data, &datalen))
-			curl_mime_encoder(part, data);
+			const HalonHSLValue *hv_encoder = HalonMTA_hsl_value_array_find(hv_form_data, "encoder");
+			if (HalonMTA_hsl_value_get(hv_encoder, HALONMTA_HSL_TYPE_STRING, &data, &datalen))
+				curl_mime_encoder(part, data);
 
-		fseek(fp, 0, SEEK_END);
-		size_t length = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
-		curl_mime_data_cb(part, length, (curl_read_callback)fread, (curl_seek_callback)fseek, nullptr, (void*)fp);
+			fseek(fp, 0, SEEK_END);
+			size_t length = ftell(fp);
+			fseek(fp, 0, SEEK_SET);
+			curl_mime_data_cb(part, length, (curl_read_callback)fread, (curl_seek_callback)fseek, nullptr, (void*)fp);
+		}
 	}
 
 	bool hasContentType = false;
