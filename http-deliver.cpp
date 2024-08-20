@@ -405,7 +405,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 			fseek(fp, 0, SEEK_END);
 			size_t length = ftell(fp);
 			fseek(fp, 0, SEEK_SET);
-			curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, length);
+			curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, length);
 		}
 		curl_easy_setopt(curl, CURLOPT_POST, 1);
 	}
