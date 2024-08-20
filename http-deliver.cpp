@@ -7,6 +7,11 @@
 #include <curl/curl.h>
 #include <openssl/evp.h>
 
+// Halon > 6.1 is linked against libcurl with this feature
+#ifndef CURLOPT_AWS_SIGV4
+#define CURLOPT_AWS_SIGV4 (CURLoption)(CURLOPTTYPE_STRINGPOINT + 305)
+#endif
+
 std::thread tid;
 bool quit = false;
 CURLM *multi_handle = nullptr;
@@ -255,6 +260,33 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		return;
 	}
 
+	const char *username = nullptr;
+	const HalonHSLValue *hv_username = HalonMTA_hsl_value_array_find(arguments, "username");
+	if (hv_username && !HalonMTA_hsl_value_get(hv_username, HALONMTA_HSL_TYPE_STRING, &username, nullptr))
+	{
+		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad username value", 0);
+		HalonMTA_deliver_done(hdc);
+		return;
+	}
+
+	const char *password = nullptr;
+	const HalonHSLValue *hv_password = HalonMTA_hsl_value_array_find(arguments, "password");
+	if (hv_password && !HalonMTA_hsl_value_get(hv_password, HALONMTA_HSL_TYPE_STRING, &password, nullptr))
+	{
+		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad password value", 0);
+		HalonMTA_deliver_done(hdc);
+		return;
+	}
+
+	const char *aws_sigv4 = nullptr;
+	const HalonHSLValue *hv_aws_sigv4 = HalonMTA_hsl_value_array_find(arguments, "aws_sigv4");
+	if (hv_aws_sigv4 && !HalonMTA_hsl_value_get(hv_aws_sigv4, HALONMTA_HSL_TYPE_STRING, &aws_sigv4, nullptr))
+	{
+		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad aws_sigv4 value", 0);
+		HalonMTA_deliver_done(hdc);
+		return;
+	}
+
 	auto h = new halon;
 	h->hdc = hdc;
 	h->user = (void*)new std::string;
@@ -393,6 +425,12 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method);
 	if (sourceip)
 		curl_easy_setopt(curl, CURLOPT_INTERFACE, sourceip);
+	if (username)
+		curl_easy_setopt(curl, CURLOPT_USERNAME, username);
+	if (password)
+		curl_easy_setopt(curl, CURLOPT_PASSWORD, password);
+	if (aws_sigv4)
+		curl_easy_setopt(curl, CURLOPT_AWS_SIGV4, aws_sigv4);
 
 	lock.lock();
 	curls.push(curl);

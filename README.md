@@ -50,6 +50,9 @@ Plugin options are:
 * proxy (string) custom proxy server
 * headers (array of string) additional headers, default empty array
 * sourceip (string) the sourceip (ipv4 or ipv6)
+* username (string) a username
+* password (string) a password
+* aws_sigv4 (string) aws_sigv4 option (see CURLOPT_AWS_SIGV4)
 * form_data (associative array) form data properties, default is not to use form_data
   * name (string) name of the form_data field containg the message content (if no name is provided the message content will be omitted)
   * type (string) content-type of the form_data field containg the message content
