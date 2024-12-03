@@ -43,8 +43,8 @@ Plugin options are:
 * url (string) required
 * tls_verify_peer (boolean) default true
 * tls_verify_host (boolean) default true
-* timeout (number) default no timeout
-* connect_timeout (number) default 300sec
+* timeout (number) in seconds. default no timeout
+* connect_timeout (number) in seconds. default 300sec
 * encoder (string) encoder of the POST data (supported: base64)
 * method (string) the request method (default is POST)
 * proxy (string) custom proxy server
@@ -52,7 +52,7 @@ Plugin options are:
 * sourceip (string) the sourceip (ipv4 or ipv6)
 * username (string) a username
 * password (string) a password
-* aws_sigv4 (string) aws_sigv4 option (see CURLOPT_AWS_SIGV4)
+* aws_sigv4 (string) aws_sigv4 option (see CURLOPT_AWS_SIGV4), for example ``aws:amz:us-east-1:s3``. Use this option together with ``username`` and ``password``.
 * form_data (associative array) form data properties, default is not to use form_data
   * name (string) name of the form_data field containg the message content (if no name is provided the message content will be omitted)
   * type (string) content-type of the form_data field containg the message content
