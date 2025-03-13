@@ -12,11 +12,11 @@
 #define CURLOPT_AWS_SIGV4 (CURLoption)(CURLOPTTYPE_STRINGPOINT + 305)
 #endif
 
-std::thread tid;
-bool quit = false;
-CURLM *multi_handle = nullptr;
-std::mutex lock;
-std::queue<CURL*> curls;
+static std::thread tid;
+static bool quit = false;
+static CURLM *multi_handle = nullptr;
+static std::mutex lock;
+static std::queue<CURL*> curls;
 
 struct halon {
 	HalonDeliverContext *hdc;
@@ -27,7 +27,7 @@ struct halon {
 	FILE *fp = nullptr;
 };
 
-void curl_multi()
+static void curl_multi()
 {
 	pthread_setname_np(pthread_self(), "p/http-deliver");
 	do {
@@ -123,13 +123,13 @@ void Halon_cleanup()
 	tid.join();
 }
 
-size_t read_callback(char *dest, size_t size, size_t nmemb, FILE *fp)
+static size_t read_callback(char *dest, size_t size, size_t nmemb, FILE *fp)
 {
 	size_t x = fread(dest, size, nmemb, fp);
 	return x;
 }
 
-size_t read_callback_evp(char *dest, size_t size, size_t nmemb, halon *h)
+static size_t read_callback_evp(char *dest, size_t size, size_t nmemb, halon *h)
 {
 	unsigned char buf[65524 / 2]; // XXX: large safety margin
 	size_t x = fread(buf, 1, sizeof(buf), h->fp);
@@ -141,7 +141,7 @@ size_t read_callback_evp(char *dest, size_t size, size_t nmemb, halon *h)
 	return destlen;
 }
 
-size_t write_callback(char *data, size_t size, size_t nmemb, std::string *writerData)
+static size_t write_callback(char *data, size_t size, size_t nmemb, std::string *writerData)
 {
 	if (writerData == nullptr)
 		return 0;
