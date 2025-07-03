@@ -69,7 +69,7 @@ static void curl_multi()
 					HalonMTA_deliver_getinfo(h->hdc, HALONMTA_INFO_RETURN, NULL, 0, &ret, NULL);
 					HalonMTA_hsl_value_array_add(ret, &k, &v);
 					HalonMTA_hsl_value_set(k, HALONMTA_HSL_TYPE_STRING, "status", 0);
-					double status_ = status;
+					double status_ = (double)status;
 					HalonMTA_hsl_value_set(v, HALONMTA_HSL_TYPE_NUMBER, &status_, 0);
 					HalonMTA_hsl_value_array_add(ret, &k, &v);
 					HalonMTA_hsl_value_set(k, HALONMTA_HSL_TYPE_STRING, "content", 0);
