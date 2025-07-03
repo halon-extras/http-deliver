@@ -49,6 +49,7 @@ static void curl_multi()
 
 				if (m->data.result != CURLE_OK)
 				{
+					HalonMTA_deliver_trace(h->hdc, 0, curl_easy_strerror(m->data.result), 0);
 					HalonMTA_deliver_setinfo(h->hdc, HALONMTA_ERROR_REASON, curl_easy_strerror(m->data.result), 0);
 				}
 				else
@@ -59,6 +60,8 @@ static void curl_multi()
 					/* build ["attempt"]["result"] */
 					HalonMTA_deliver_setinfo(h->hdc, HALONMTA_RESULT_CODE, &status, 0);
 					HalonMTA_deliver_setinfo(h->hdc, HALONMTA_RESULT_REASON, "HTTP", 0);
+
+					HalonMTA_deliver_trace(h->hdc, 0, std::string("Message sent (HTTP: " + std::to_string(status) + ")").c_str(), 0);
 
 					/* build ["attempt"]["plugin"]["return"] */
 					HalonHSLValue *k, *v;
@@ -73,6 +76,7 @@ static void curl_multi()
 					HalonMTA_hsl_value_set(v, HALONMTA_HSL_TYPE_STRING, ((std::string*)h->user)->c_str(), 0);
 				}
 
+				HalonMTA_deliver_trace(h->hdc, 0, "End of trace", 0);
 				HalonMTA_deliver_done(h->hdc);
 				delete (std::string*)h->user;
 				curl_slist_free_all(h->headers);
@@ -92,6 +96,9 @@ static void curl_multi()
 		while (!curls.empty())
 		{
 			CURL *curl = curls.front();
+			halon *h;
+			curl_easy_getinfo(curl, CURLINFO_PRIVATE, &h);
+			HalonMTA_deliver_trace(h->hdc, 0, "Sending message", 0);
 			curl_multi_add_handle(multi_handle, curl);
 			curls.pop();
 		}
@@ -149,13 +156,34 @@ static size_t write_callback(char *data, size_t size, size_t nmemb, std::string 
 	return size * nmemb;
 }
 
+static void HTTP_set_error(HalonDeliverContext *hdc, const char* error)
+{
+	HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, error, 0);
+	HalonMTA_deliver_trace(hdc, 0, std::string("http-deliver failed: " + std::string(error)).c_str(), 0);
+	HalonMTA_deliver_trace(hdc, 0, "End of trace", 0);
+}
+
 HALON_EXPORT
 void Halon_deliver(HalonDeliverContext *hdc)
 {
+	HalonQueueMessage* hqm;
+	const char* transactionid;
+	size_t queueid;
+	if (!HalonMTA_deliver_getinfo(hdc, HALONMTA_INFO_MESSAGE, nullptr, 0, (void*)&hqm, nullptr) ||
+		!HalonMTA_message_getinfo(hqm, HALONMTA_MESSAGE_TRANSACTIONID, nullptr, 0, &transactionid, nullptr) ||
+		!HalonMTA_message_getinfo(hqm, HALONMTA_MESSAGE_QUEUEID, nullptr, 0, &queueid, nullptr))
+	{
+		HTTP_set_error(hdc, "No message (internal error)");
+		HalonMTA_deliver_done(hdc);
+		return;
+	}
+
+	HalonMTA_deliver_trace(hdc, 0, std::string("Begin trace of message " + std::string(transactionid) + ":" + std::to_string(queueid)).c_str(), 0);
+
 	FILE *fp = nullptr;
 	if (!HalonMTA_deliver_getinfo(hdc, HALONMTA_INFO_FILE, nullptr, 0, (void*)&fp, nullptr))
 	{
-		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "No file (internal error)", 0);
+		HTTP_set_error(hdc, "No file (internal error)");
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
@@ -163,7 +191,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	const HalonHSLValue *arguments = nullptr;
 	if (!HalonMTA_deliver_getinfo(hdc, HALONMTA_INFO_ARGUMENTS, nullptr, 0, &arguments, nullptr))
 	{
-		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "No argument", 0);
+		HTTP_set_error(hdc, "No argument");
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
@@ -172,7 +200,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	const HalonHSLValue *hv_url = HalonMTA_hsl_value_array_find(arguments, "url");
 	if (!hv_url || !HalonMTA_hsl_value_get(hv_url, HALONMTA_HSL_TYPE_STRING, &url, nullptr))
 	{
-		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "No URL", 0);
+		HTTP_set_error(hdc, "No URL");
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
@@ -181,7 +209,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	const HalonHSLValue *hv_tls_verify_peer = HalonMTA_hsl_value_array_find(arguments, "tls_verify_peer");
 	if (hv_tls_verify_peer && !HalonMTA_hsl_value_get(hv_tls_verify_peer, HALONMTA_HSL_TYPE_BOOLEAN, &tls_verify_peer, nullptr))
 	{
-		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad tls_verify_peer value", 0);
+		HTTP_set_error(hdc, "Bad tls_verify_peer value");
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
@@ -190,7 +218,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	const HalonHSLValue *hv_tls_verify_host = HalonMTA_hsl_value_array_find(arguments, "tls_verify_host");
 	if (hv_tls_verify_host && !HalonMTA_hsl_value_get(hv_tls_verify_host, HALONMTA_HSL_TYPE_BOOLEAN, &tls_verify_host, nullptr))
 	{
-		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad tls_verify_host value", 0);
+		HTTP_set_error(hdc, "Bad tls_verify_host value");
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
@@ -202,7 +230,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		double timeout_;
 		if (!HalonMTA_hsl_value_get(hv_timeout, HALONMTA_HSL_TYPE_NUMBER, &timeout_, nullptr))
 		{
-			HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad timeout value", 0);
+			HTTP_set_error(hdc, "Bad timeout value");
 			HalonMTA_deliver_done(hdc);
 			return;
 		}
@@ -216,7 +244,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		double connect_timeout_;
 		if (!HalonMTA_hsl_value_get(hv_connect_timeout, HALONMTA_HSL_TYPE_NUMBER, &connect_timeout_, nullptr))
 		{
-			HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad connect_timeout value", 0);
+			HTTP_set_error(hdc, "Bad connect_timeout value");
 			HalonMTA_deliver_done(hdc);
 			return;
 		}
@@ -227,7 +255,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	const HalonHSLValue *hv_encoder = HalonMTA_hsl_value_array_find(arguments, "encoder");
 	if (hv_encoder && !HalonMTA_hsl_value_get(hv_encoder, HALONMTA_HSL_TYPE_STRING, &encoder, nullptr))
 	{
-		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad encoder value", 0);
+		HTTP_set_error(hdc, "Bad encoder value");
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
@@ -237,7 +265,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	const HalonHSLValue *hv_proxy = HalonMTA_hsl_value_array_find(arguments, "proxy");
 	if (hv_proxy && !HalonMTA_hsl_value_get(hv_proxy, HALONMTA_HSL_TYPE_STRING, &proxy, nullptr))
 	{
-		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad proxy value", 0);
+		HTTP_set_error(hdc, "Bad proxy value");
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
@@ -246,7 +274,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	const HalonHSLValue *hv_method = HalonMTA_hsl_value_array_find(arguments, "method");
 	if (hv_method && !HalonMTA_hsl_value_get(hv_method, HALONMTA_HSL_TYPE_STRING, &method, nullptr))
 	{
-		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad method value", 0);
+		HTTP_set_error(hdc, "Bad method value");
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
@@ -255,7 +283,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	const HalonHSLValue *hv_sourceip = HalonMTA_hsl_value_array_find(arguments, "sourceip");
 	if (hv_sourceip && !HalonMTA_hsl_value_get(hv_sourceip, HALONMTA_HSL_TYPE_STRING, &sourceip, nullptr))
 	{
-		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad sourceip value", 0);
+		HTTP_set_error(hdc, "Bad sourceip value");
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
@@ -264,7 +292,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	const HalonHSLValue *hv_username = HalonMTA_hsl_value_array_find(arguments, "username");
 	if (hv_username && !HalonMTA_hsl_value_get(hv_username, HALONMTA_HSL_TYPE_STRING, &username, nullptr))
 	{
-		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad username value", 0);
+		HTTP_set_error(hdc, "Bad username value");
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
@@ -273,7 +301,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	const HalonHSLValue *hv_password = HalonMTA_hsl_value_array_find(arguments, "password");
 	if (hv_password && !HalonMTA_hsl_value_get(hv_password, HALONMTA_HSL_TYPE_STRING, &password, nullptr))
 	{
-		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad password value", 0);
+		HTTP_set_error(hdc, "Bad password value");
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
@@ -282,7 +310,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	const HalonHSLValue *hv_aws_sigv4 = HalonMTA_hsl_value_array_find(arguments, "aws_sigv4");
 	if (hv_aws_sigv4 && !HalonMTA_hsl_value_get(hv_aws_sigv4, HALONMTA_HSL_TYPE_STRING, &aws_sigv4, nullptr))
 	{
-		HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, "Bad aws_sigv4 value", 0);
+		HTTP_set_error(hdc, "Bad aws_sigv4 value");
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
@@ -435,6 +463,8 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		curl_easy_setopt(curl, CURLOPT_PASSWORD, password);
 	if (aws_sigv4)
 		curl_easy_setopt(curl, CURLOPT_AWS_SIGV4, aws_sigv4);
+
+	HalonMTA_deliver_trace(hdc, 0, std::string("Queuing message (" + std::string(url) + ")").c_str(), 0);
 
 	lock.lock();
 	curls.push(curl);
