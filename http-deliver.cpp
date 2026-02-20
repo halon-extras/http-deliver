@@ -49,7 +49,6 @@ static void curl_multi()
 
 				if (m->data.result != CURLE_OK)
 				{
-					HalonMTA_deliver_trace(h->hdc, 0, curl_easy_strerror(m->data.result), 0);
 					HalonMTA_deliver_setinfo(h->hdc, HALONMTA_ERROR_REASON, curl_easy_strerror(m->data.result), 0);
 				}
 				else
@@ -60,8 +59,6 @@ static void curl_multi()
 					/* build ["attempt"]["result"] */
 					HalonMTA_deliver_setinfo(h->hdc, HALONMTA_RESULT_CODE, &status, 0);
 					HalonMTA_deliver_setinfo(h->hdc, HALONMTA_RESULT_REASON, "HTTP", 0);
-
-					HalonMTA_deliver_trace(h->hdc, 0, std::string("Message sent (HTTP: " + std::to_string(status) + ")").c_str(), 0);
 
 					/* build ["attempt"]["plugin"]["return"] */
 					HalonHSLValue *k, *v;
@@ -76,7 +73,6 @@ static void curl_multi()
 					HalonMTA_hsl_value_set(v, HALONMTA_HSL_TYPE_STRING, ((std::string*)h->user)->c_str(), 0);
 				}
 
-				HalonMTA_deliver_trace(h->hdc, 0, "End of trace", 0);
 				HalonMTA_deliver_done(h->hdc);
 				delete (std::string*)h->user;
 				curl_slist_free_all(h->headers);
@@ -98,7 +94,6 @@ static void curl_multi()
 			CURL *curl = curls.front();
 			halon *h;
 			curl_easy_getinfo(curl, CURLINFO_PRIVATE, &h);
-			HalonMTA_deliver_trace(h->hdc, 0, "Sending message", 0);
 			curl_multi_add_handle(multi_handle, curl);
 			curls.pop();
 		}
@@ -159,8 +154,6 @@ static size_t write_callback(char *data, size_t size, size_t nmemb, std::string 
 static void HTTP_set_error(HalonDeliverContext *hdc, const char* error)
 {
 	HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, error, 0);
-	HalonMTA_deliver_trace(hdc, 0, std::string("http-deliver failed: " + std::string(error)).c_str(), 0);
-	HalonMTA_deliver_trace(hdc, 0, "End of trace", 0);
 }
 
 HALON_EXPORT
@@ -177,8 +170,6 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		HalonMTA_deliver_done(hdc);
 		return;
 	}
-
-	HalonMTA_deliver_trace(hdc, 0, std::string("Begin trace of message " + std::string(transactionid) + ":" + std::to_string(queueid)).c_str(), 0);
 
 	FILE *fp = nullptr;
 	if (!HalonMTA_deliver_getinfo(hdc, HALONMTA_INFO_FILE, nullptr, 0, (void*)&fp, nullptr))
@@ -463,8 +454,6 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		curl_easy_setopt(curl, CURLOPT_PASSWORD, password);
 	if (aws_sigv4)
 		curl_easy_setopt(curl, CURLOPT_AWS_SIGV4, aws_sigv4);
-
-	HalonMTA_deliver_trace(hdc, 0, std::string("Queuing message (" + std::string(url) + ")").c_str(), 0);
 
 	lock.lock();
 	curls.push(curl);
