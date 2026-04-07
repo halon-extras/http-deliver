@@ -1,0 +1,17 @@
+[
+  {
+    "id": "default",
+    "priority": -10,
+    "httpRequest": {
+      "method": "POST",
+      "path": "/http-deliver-endpoint",
+      "headers": {
+        "Content-Type": ["message/rfc822"]
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "body": "OK"
+    }
+  }
+]

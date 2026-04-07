@@ -10,3 +10,11 @@ services:
     volumes:
       - ../:/http-deliver
       - ./smtpd/dist:/etc/halon
+  mockserver:
+    image: mockserver/mockserver:5.14.0
+    environment:
+      MOCKSERVER_PROPERTY_FILE: /config/mockserver.properties
+    volumes:
+      - type: bind
+        source: ./mockserver
+        target: /config

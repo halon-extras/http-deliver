@@ -4,7 +4,7 @@ servers:
     phases:
       eod:
         hook: default
-    transport: mx
+    transport: http-deliver
 transportgroups:
   - id: default
     retry:
