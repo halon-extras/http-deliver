@@ -16,9 +16,10 @@ static std::thread tid;
 static bool quit = false;
 static CURLM *multi_handle = nullptr;
 static std::mutex lock;
-static std::queue<CURL*> curls;
+static std::queue<CURL *> curls;
 
-struct halon {
+struct halon
+{
 	HalonDeliverContext *hdc;
 	struct curl_slist *headers = nullptr;
 	curl_mime *mime = nullptr;
@@ -31,14 +32,16 @@ struct halon {
 static void curl_multi()
 {
 	pthread_setname_np(pthread_self(), "p/http-deliver");
-	do {
+	do
+	{
 		CURLMcode mc;
 
 		int still_running;
 		mc = curl_multi_perform(multi_handle, &still_running);
 
 		struct CURLMsg *m;
-		do {
+		do
+		{
 			int msgq = 0;
 			m = curl_multi_info_read(multi_handle, &msgq);
 			if (m && (m->msg == CURLMSG_DONE))
@@ -74,12 +77,12 @@ static void curl_multi()
 					HalonMTA_hsl_value_set(v, HALONMTA_HSL_TYPE_NUMBER, &status_, 0);
 					HalonMTA_hsl_value_array_add(ret, &k, &v);
 					HalonMTA_hsl_value_set(k, HALONMTA_HSL_TYPE_STRING, "content", 0);
-					HalonMTA_hsl_value_set(v, HALONMTA_HSL_TYPE_STRING, ((std::string*)h->user)->c_str(), 0);
+					HalonMTA_hsl_value_set(v, HALONMTA_HSL_TYPE_STRING, ((std::string *)h->user)->c_str(), 0);
 				}
 
 				HalonMTA_deliver_trace(h->hdc, 0, "End of trace", 0);
 				HalonMTA_deliver_done(h->hdc);
-				delete (std::string*)h->user;
+				delete (std::string *)h->user;
 				curl_slist_free_all(h->headers);
 				curl_mime_free(h->mime);
 				EVP_ENCODE_CTX_free(h->evp);
@@ -152,7 +155,7 @@ static size_t read_callback_evp(char *dest, size_t size, size_t nmemb, halon *h)
 		h->evp_done = true;
 	}
 	else
-		EVP_EncodeUpdate(h->evp, (unsigned char*)dest, &destlen, buf, (int)x);
+		EVP_EncodeUpdate(h->evp, (unsigned char *)dest, &destlen, buf, (int)x);
 	return destlen;
 }
 
@@ -160,11 +163,11 @@ static size_t write_callback(char *data, size_t size, size_t nmemb, std::string 
 {
 	if (writerData == nullptr)
 		return 0;
-	writerData->append((const char*)data, size * nmemb);
+	writerData->append((const char *)data, size * nmemb);
 	return size * nmemb;
 }
 
-static void HTTP_set_error(HalonDeliverContext *hdc, const char* error)
+static void HTTP_set_error(HalonDeliverContext *hdc, const char *error)
 {
 	HalonMTA_deliver_setinfo(hdc, HALONMTA_ERROR_REASON, error, 0);
 	HalonMTA_deliver_trace(hdc, 0, std::string("http-deliver failed: " + std::string(error)).c_str(), 0);
@@ -174,10 +177,10 @@ static void HTTP_set_error(HalonDeliverContext *hdc, const char* error)
 HALON_EXPORT
 void Halon_deliver(HalonDeliverContext *hdc)
 {
-	HalonQueueMessage* hqm;
-	const char* transactionid;
+	HalonQueueMessage *hqm;
+	const char *transactionid;
 	size_t queueid;
-	if (!HalonMTA_deliver_getinfo(hdc, HALONMTA_INFO_MESSAGE, nullptr, 0, (void*)&hqm, nullptr) ||
+	if (!HalonMTA_deliver_getinfo(hdc, HALONMTA_INFO_MESSAGE, nullptr, 0, (void *)&hqm, nullptr) ||
 		!HalonMTA_message_getinfo(hqm, HALONMTA_MESSAGE_TRANSACTIONID, nullptr, 0, &transactionid, nullptr) ||
 		!HalonMTA_message_getinfo(hqm, HALONMTA_MESSAGE_QUEUEID, nullptr, 0, &queueid, nullptr))
 	{
@@ -189,7 +192,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	HalonMTA_deliver_trace(hdc, 0, std::string("Begin trace of message " + std::string(transactionid) + ":" + std::to_string(queueid)).c_str(), 0);
 
 	FILE *fp = nullptr;
-	if (!HalonMTA_deliver_getinfo(hdc, HALONMTA_INFO_FILE, nullptr, 0, (void*)&fp, nullptr))
+	if (!HalonMTA_deliver_getinfo(hdc, HALONMTA_INFO_FILE, nullptr, 0, (void *)&fp, nullptr))
 	{
 		HTTP_set_error(hdc, "No file (internal error)");
 		HalonMTA_deliver_done(hdc);
@@ -325,7 +328,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 
 	auto h = new halon;
 	h->hdc = hdc;
-	h->user = (void*)new std::string;
+	h->user = (void *)new std::string;
 
 	CURL *curl = curl_easy_init();
 
@@ -371,7 +374,8 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		size_t datalen;
 
 		const HalonHSLValue *hv_name = HalonMTA_hsl_value_array_find(hv_form_data, "name");
-		if (HalonMTA_hsl_value_get(hv_name, HALONMTA_HSL_TYPE_STRING, &data, &datalen)) {
+		if (HalonMTA_hsl_value_get(hv_name, HALONMTA_HSL_TYPE_STRING, &data, &datalen))
+		{
 			curl_mimepart *part = curl_mime_addpart(h->mime);
 
 			curl_mime_name(part, data);
@@ -391,7 +395,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 			fseek(fp, 0, SEEK_END);
 			size_t length = ftell(fp);
 			fseek(fp, 0, SEEK_SET);
-			curl_mime_data_cb(part, length, (curl_read_callback)fread, (curl_seek_callback)fseek, nullptr, (void*)fp);
+			curl_mime_data_cb(part, length, (curl_read_callback)fread, (curl_seek_callback)fseek, nullptr, (void *)fp);
 		}
 	}
 
@@ -418,7 +422,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 		h->headers = curl_slist_append(h->headers, "Content-Type: message/rfc822");
 
 	curl_easy_setopt(curl, CURLOPT_URL, url);
-	curl_easy_setopt(curl, CURLOPT_PRIVATE, (void*)h);
+	curl_easy_setopt(curl, CURLOPT_PRIVATE, (void *)h);
 
 	if (h->mime)
 	{
@@ -432,12 +436,12 @@ void Halon_deliver(HalonDeliverContext *hdc)
 			h->evp = EVP_ENCODE_CTX_new();
 			EVP_EncodeInit(h->evp);
 			curl_easy_setopt(curl, CURLOPT_READFUNCTION, ::read_callback_evp);
-			curl_easy_setopt(curl, CURLOPT_READDATA, (void*)h);
+			curl_easy_setopt(curl, CURLOPT_READDATA, (void *)h);
 		}
 		else
 		{
 			curl_easy_setopt(curl, CURLOPT_READFUNCTION, ::read_callback);
-			curl_easy_setopt(curl, CURLOPT_READDATA, (void*)fp);
+			curl_easy_setopt(curl, CURLOPT_READDATA, (void *)fp);
 			fseek(fp, 0, SEEK_END);
 			size_t length = ftell(fp);
 			fseek(fp, 0, SEEK_SET);
