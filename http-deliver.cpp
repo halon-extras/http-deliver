@@ -24,6 +24,7 @@ struct halon {
 	curl_mime *mime = nullptr;
 	void *user;
 	EVP_ENCODE_CTX *evp = nullptr;
+	bool evp_done = false;
 	FILE *fp = nullptr;
 };
 
@@ -138,11 +139,18 @@ static size_t read_callback(char *dest, size_t size, size_t nmemb, FILE *fp)
 
 static size_t read_callback_evp(char *dest, size_t size, size_t nmemb, halon *h)
 {
+	if (h->evp_done)
+	{
+		return 0;
+	}
 	unsigned char buf[65524 / 2]; // XXX: large safety margin
 	size_t x = fread(buf, 1, sizeof(buf), h->fp);
-	int destlen;
+	int destlen = 0;
 	if (x == 0)
-		EVP_EncodeFinal(h->evp, (unsigned char*)dest, &destlen);
+	{
+		EVP_EncodeFinal(h->evp, (unsigned char *)dest, &destlen);
+		h->evp_done = true;
+	}
 	else
 		EVP_EncodeUpdate(h->evp, (unsigned char*)dest, &destlen, buf, (int)x);
 	return destlen;
