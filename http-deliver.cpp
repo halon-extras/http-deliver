@@ -359,7 +359,7 @@ void Halon_deliver(HalonDeliverContext *hdc)
 				if (HalonMTA_hsl_value_get(hv_field_filename, HALONMTA_HSL_TYPE_STRING, &data, &datalen))
 					curl_mime_filename(field, data);
 
-				const HalonHSLValue *hv_field_encoder = HalonMTA_hsl_value_array_find(hv_form_data, "encoder");
+				const HalonHSLValue *hv_field_encoder = HalonMTA_hsl_value_array_find(v, "encoder");
 				if (HalonMTA_hsl_value_get(hv_field_encoder, HALONMTA_HSL_TYPE_STRING, &data, &datalen))
 					curl_mime_encoder(field, data);
 
