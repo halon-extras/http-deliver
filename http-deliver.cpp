@@ -485,6 +485,9 @@ void Halon_deliver(HalonDeliverContext *hdc)
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, h->headers);
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 
+	// Only allow HTTP(S); this also applies to redirects
+	curl_easy_setopt(curl, CURLOPT_PROTOCOLS, (long)(CURLPROTO_HTTP | CURLPROTO_HTTPS));
+
 	if (timeout)
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
 	if (connect_timeout)
