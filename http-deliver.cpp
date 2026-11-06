@@ -3,6 +3,7 @@
 #include <thread>
 #include <queue>
 #include <mutex>
+#include <atomic>
 #include <cstring>
 #include <curl/curl.h>
 #include <openssl/evp.h>
@@ -13,7 +14,7 @@
 #endif
 
 static std::thread tid;
-static bool quit = false;
+static std::atomic<bool> quit{false};
 static CURLM *multi_handle = nullptr;
 static std::mutex lock;
 static std::queue<CURL *> curls;
